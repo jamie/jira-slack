@@ -38,7 +38,7 @@ def set_slack_topic(channel, topic)
   client.conversations_setTopic(
     channel: channel.id,
     topic: topic
-  )
+  ) if channel.topic.value != topic
 end
 
 release = get_jira_release(/Maintenance/)
