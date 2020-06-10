@@ -43,5 +43,5 @@ end
 
 release = get_jira_release(/Maintenance/)
 orig_topic = "This group is responsible for ARC maintenance. :stuck_out_tongue: "
-topic = "Current Release: #{release.name} targeting #{release.userReleaseDate}"
+topic = "#{release.name} due #{release.userReleaseDate}"
 set_slack_topic('bot-testing', orig_topic + topic)
