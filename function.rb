@@ -6,16 +6,15 @@ require 'slack-ruby-client'
 require 'jira-ruby'
 
 def get_jira_release(matching)
-  options = {
+  client = JIRA::Client.new(
     username: ENV['JIRA_USER'],
     password: ENV['JIRA_TOKEN'],
     site: 'https://versapayclientservices.atlassian.net',
     context_path: '',
     auth_type: :basic,
-    read_timeout: 120,
-  }
+    read_timeout: 120
+  )
 
-  client = JIRA::Client.new(options)
   current_release = client
     .Project
     .find('VA')
