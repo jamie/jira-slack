@@ -27,6 +27,7 @@ GEM
     minitest (5.14.1)
     multipart-post (2.1.1)
     oauth (0.5.4)
+    rake (13.0.1)
     slack-ruby-client (0.14.6)
       activesupport
       faraday (>= 0.9)
@@ -47,6 +48,7 @@ PLATFORMS
 
 DEPENDENCIES
   jira-ruby
+  rake
   slack-ruby-client
 
 BUNDLED WITH
