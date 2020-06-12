@@ -47,5 +47,5 @@ def lambda_handler(*)
   release = get_jira_release(/Maintenance/)
   orig_topic = 'This group is responsible for ARC maintenance. :stuck_out_tongue:  '
   topic = "#{release.name} due #{release.userReleaseDate}"
-  set_slack_topic('bot-testing', orig_topic + topic)
+  set_slack_topic('maintenanceteam', orig_topic + topic)
 end
