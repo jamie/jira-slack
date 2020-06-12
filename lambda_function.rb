@@ -5,42 +5,47 @@ require 'pp'
 require 'slack-ruby-client'
 require 'jira-ruby'
 
-def get_jira_release(matching)
-  client = JIRA::Client.new(
-    username: ENV['JIRA_USER'],
-    password: ENV['JIRA_TOKEN'],
-    site: 'https://versapayclientservices.atlassian.net',
-    context_path: '',
-    auth_type: :basic,
-    read_timeout: 120
-  )
+JIRA_CONFIG = {
+  username: ENV['JIRA_USER'],
+  password: ENV['JIRA_TOKEN'],
+  site: 'https://versapayclientservices.atlassian.net',
+  context_path: '',
+  auth_type: :basic,
+  read_timeout: 120
+}.freeze
 
-  current_release = client
+Slack.configure do |config|
+  config.token = ENV['SLACK_OAUTH_TOKEN']
+end
+
+def get_jira_release(matching)
+  JIRA::Client
+    .new(JIRA_CONFIG)
     .Project
     .find('VA')
     .versions
-    .select{|v| !v.released && v.name =~ matching }
-    .sort_by(&:releaseDate)
-    .first
+    .select { |v| !v.released && v.name =~ matching }
+    .min_by(&:releaseDate)
 end
 
 def set_slack_topic(channel, topic)
-  Slack.configure do |config|
-    config.token = ENV['SLACK_OAUTH_TOKEN']
-  end
-
   client = Slack::Web::Client.new
 
-  channel = client.channels_list.channels.find{ |c|
-    c.name == channel
-  }
+  channel = client
+            .channels_list
+            .channels
+            .find { |c| c.name == channel }
+  return if channel.topic.value == topic
+
   client.conversations_setTopic(
     channel: channel.id,
     topic: topic
-  ) if channel.topic.value != topic
+  )
 end
 
-release = get_jira_release(/Maintenance/)
-orig_topic = "This group is responsible for ARC maintenance. :stuck_out_tongue: "
-topic = "#{release.name} due #{release.userReleaseDate}"
-set_slack_topic('bot-testing', orig_topic + topic)
+def lambda_handler(*)
+  release = get_jira_release(/Maintenance/)
+  orig_topic = 'This group is responsible for ARC maintenance. :stuck_out_tongue:  '
+  topic = "#{release.name} due #{release.userReleaseDate}"
+  set_slack_topic('bot-testing', orig_topic + topic)
+end
