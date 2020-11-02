@@ -24,7 +24,7 @@ def get_jira_release(matching)
     .Project
     .find('VA')
     .versions
-    .select { |v| !v.released && v.name =~ matching }
+    .select { |v| !v.released && v.name =~ matching && v.respond_to?(:releaseDate) }
     .min_by(&:releaseDate)
 end
 
