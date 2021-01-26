@@ -43,9 +43,13 @@ def set_slack_topic(channel, topic)
   )
 end
 
-def lambda_handler(*)
-  release = get_jira_release(/^Maintenance/)
+def topic_from(release)
   orig_topic = 'This group is responsible for ARC maintenance. :stuck_out_tongue:  '
   topic = "#{release.name} due #{release.releaseDate}"
-  set_slack_topic('maintenanceteam', orig_topic + topic)
+  orig_topic + topic
+end
+
+def lambda_handler(*)
+  release = get_jira_release(/^Maintenance/)
+  set_slack_topic('maintenanceteam', topic_from(release))
 end
