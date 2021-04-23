@@ -12,3 +12,9 @@ end
 
 desc 'Build and publish to Lambda'
 task :release => [:build, :publish]
+
+desc 'Run the lambda function locally'
+task :run do
+  require './lambda_function'
+  lambda_handler()
+end
