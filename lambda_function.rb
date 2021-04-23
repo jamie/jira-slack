@@ -32,7 +32,7 @@ def set_slack_topic(channel, topic)
   client = Slack::Web::Client.new
 
   channel = client
-            .channels_list
+            .conversations_list
             .channels
             .find { |c| c.name == channel }
   return if channel.topic.value == topic
