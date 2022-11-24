@@ -45,10 +45,12 @@ def set_slack_topic(channel, topic)
 end
 
 def topic_from(releases)
-  release = releases.first
-  orig_topic = 'This group is responsible for ARC maintenance. :stuck_out_tongue:  '
-  topic = "#{release.name} due #{release.releaseDate}"
-  orig_topic + topic
+  "C-AR Maintenance upcoming schedule " +
+  releases.map { |release|
+    deploy_date = Date.parse(release.releaseDate)
+    verify_date = deploy_date - 2
+    "🚧 #{release.name} - tickets verified EOD #{verify_date.strftime("%b. %-d")}, deploy #{deploy_date.strftime("%b. %-d")}"
+  }.join("\n")
 end
 
 def lambda_handler(*)
