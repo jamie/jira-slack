@@ -49,7 +49,7 @@ def topic_from(releases)
   releases.map { |release|
     deploy_date = Date.parse(release.releaseDate)
     verify_date = deploy_date - 2
-    "🚧 #{release.name} - verify by EOD #{verify_date.strftime("%b. %-d")}, deploy #{deploy_date.strftime("%b. %-d")}"
+    ":construction: #{release.name} - verify by EOD #{verify_date.strftime("%b. %-d")}, deploy #{deploy_date.strftime("%b. %-d")}"
   }.join("\n")
 end
 
