@@ -18,14 +18,15 @@ Slack.configure do |config|
   config.token = ENV['SLACK_OAUTH_TOKEN']
 end
 
-def get_jira_release(matching)
+def get_jira_releases(matching, count)
   JIRA::Client
     .new(JIRA_CONFIG)
     .Project
     .find('VA')
     .versions
     .select { |v| !v.released && v.name =~ matching && v.respond_to?(:releaseDate) }
-    .min_by(&:releaseDate)
+    .sort_by(&:releaseDate)
+    .take(count)
 end
 
 def set_slack_topic(channel, topic)
@@ -43,13 +44,14 @@ def set_slack_topic(channel, topic)
   )
 end
 
-def topic_from(release)
+def topic_from(releases)
+  release = releases.first
   orig_topic = 'This group is responsible for ARC maintenance. :stuck_out_tongue:  '
   topic = "#{release.name} due #{release.releaseDate}"
   orig_topic + topic
 end
 
 def lambda_handler(*)
-  release = get_jira_release(/^Maintenance/)
-  set_slack_topic('maintenanceteam', topic_from(release))
+  releases = get_jira_releases(/^Maintenance/, 3)
+  set_slack_topic('maintenanceteam', topic_from(releases))
 end
