@@ -45,11 +45,11 @@ def set_slack_topic(channel, topic)
 end
 
 def topic_from(releases)
-  "C-AR Maintenance upcoming schedule " +
+  "C-AR Maintenance schedule (hover me)\n" +
   releases.map { |release|
     deploy_date = Date.parse(release.releaseDate)
     verify_date = deploy_date - 2
-    "🚧 #{release.name} - tickets verified EOD #{verify_date.strftime("%b. %-d")}, deploy #{deploy_date.strftime("%b. %-d")}"
+    "🚧 #{release.name} - verify by EOD #{verify_date.strftime("%b. %-d")}, deploy #{deploy_date.strftime("%b. %-d")}"
   }.join("\n")
 end
 
