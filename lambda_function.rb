@@ -54,6 +54,6 @@ def topic_from(releases)
 end
 
 def lambda_handler(*)
-  releases = get_jira_releases(/^Maintenance/, 3)
+  releases = get_jira_releases(/Maintenance/, 3)
   set_slack_topic('maintenanceteam', topic_from(releases))
 end
