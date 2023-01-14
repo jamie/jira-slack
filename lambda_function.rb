@@ -22,7 +22,7 @@ def get_jira_releases(matching, count)
   JIRA::Client
     .new(JIRA_CONFIG)
     .Project
-    .find('VA')
+    .find('CAR')
     .versions
     .select { |v| !v.released && v.name =~ matching && v.respond_to?(:releaseDate) }
     .sort_by(&:releaseDate)
