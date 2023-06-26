@@ -45,9 +45,12 @@ def set_slack_topic(channel, topic)
 end
 
 def topic_from(releases)
-  # Note: Don't use unicode, Slack will convert to :emoji: representation internally and truncate.
-  # Hard cap is supposed to be 250 chars, but the remote API truncates around 239
-  # so we arrange our payload to hover under that. Currently 3 releases is 229.
+  # Note: Slack normalizes the topic name on post:
+  # - converts unicode characters to their :emoji: equivalent
+  # - encodes html entities like &gt; instead of >
+  # - If over 250 chars, truncates to around 240 and adds `...`
+  # So to avoid channel spam, our topic needs to be pre-normalized for an equality check.
+
   "C-AR Maintenance schedule (hover me)\n" +
   releases.map { |release|
     deploy_date = Date.parse(release.releaseDate)
@@ -55,7 +58,7 @@ def topic_from(releases)
     freeze_date = deploy_date - 6
     release_name = release.name.gsub(/CAR /,"")[0...20]
 
-    ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} >#{release_name}"
+    ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_name}"
   }.join("\n")
 end
 
