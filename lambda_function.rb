@@ -50,15 +50,21 @@ def topic_from(releases)
   # - If over 250 chars, truncates to around 240 and adds `...`
   # So to avoid channel spam, our topic needs to be pre-normalized for an equality check.
 
-  "C-AR Maintenance schedule (hover me)\n" +
-    releases.map { |release|
-      deploy_date = Date.parse(release.releaseDate)
-      verify_date = deploy_date - 2
-      freeze_date = deploy_date - 6
-      release_name = release.name.gsub(/CAR /, "")[0...20]
+  prefix = "C-AR Maintenance schedule (hover me)"
+  summary = releases.map { |release|
+    deploy_date = Date.parse(release.releaseDate)
+    verify_date = deploy_date - 2
+    freeze_date = deploy_date - 6
+    release_name = release
+      .name
+      .gsub(/C-?AR /, "")
+      .gsub("Maintenance", "Maint")
+      .gsub("Release", "Rel")
+      .to_s[0...20]
 
-      ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_name}"
-    }.join("\n")
+    ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_name}"
+  }
+  [prefix, summary].flatten.join("\n")
 end
 
 def date_fmt(date)
