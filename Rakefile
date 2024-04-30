@@ -18,3 +18,9 @@ task :run do
   require "./lambda_function"
   lambda_handler
 end
+
+desc "Run the lambda function locally"
+task :dryrun do
+  require "./lambda_function"
+  lambda_handler(dry: true)
+end

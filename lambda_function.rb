@@ -65,7 +65,12 @@ def date_fmt(date)
   date.strftime("%b%-d")
 end
 
-def lambda_handler(*)
+def lambda_handler(*, dry: false)
   releases = get_jira_releases(/Maintenance/, 3)
-  set_slack_topic("maintenanceteam", topic_from(releases))
+  if dry
+    pp releases.map(&:name)
+    puts topic_from(releases)
+  else
+    set_slack_topic("maintenanceteam", topic_from(releases))
+  end
 end
