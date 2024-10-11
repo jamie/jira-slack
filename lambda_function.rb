@@ -23,8 +23,9 @@ def get_jira_releases(matching, count)
     .Project
     .find("CAR")
     .versions
-    .select { |v| !v.released && v.name =~ matching && v.respond_to?(:releaseDate) }
+    .select { |v| !v.released && !v.archived && v.name =~ matching && v.respond_to?(:releaseDate) }
     .sort_by(&:releaseDate)
+    .tap{ pp _1 }
     .take(count)
 end
 
