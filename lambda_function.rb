@@ -72,7 +72,7 @@ def date_fmt(date)
   date.strftime("%b%-d")
 end
 
-def lambda_handler(*, dry: false)
+def lambda_handler(*, dry: false, **)
   releases = get_jira_releases(/Maintenance/, 3)
   if dry
     pp releases.map(&:name)
