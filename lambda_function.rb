@@ -61,6 +61,7 @@ def topic_from(releases)
       .gsub(/C-?AR /, "")
       .gsub("Maintenance", "Maint")
       .gsub("Release", "Rel")
+      .gsub(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^-]+/, "\\1")
       .to_s[0...20]
 
     ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_name}"
