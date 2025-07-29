@@ -1,6 +1,7 @@
 require "rubygems"
 require "bundler/setup"
 
+require "active_support/all"
 require "slack-ruby-client"
 require "jira-ruby"
 
