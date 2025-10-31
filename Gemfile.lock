@@ -56,6 +56,7 @@ GEM
       version_gem (~> 1.1, >= 1.1.9)
     oauth-tty (1.0.6)
       version_gem (~> 1.1, >= 1.1.9)
+    openssl (3.3.2)
     ostruct (0.6.3)
     rake (13.3.1)
     securerandom (0.4.1)
@@ -79,6 +80,7 @@ PLATFORMS
 
 DEPENDENCIES
   jira-ruby
+  openssl
   rake
   slack-ruby-client
 
