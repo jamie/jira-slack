@@ -88,22 +88,21 @@ class JiraRelease
 end
 
 class SlackChannel
-  def initialize(channel_name, client: nil, dry_run: false)
-    @channel_name = channel_name
+  def initialize(client: nil, dry_run: false)
     @client = client || Slack::Web::Client.new
     @dry_run = dry_run
   end
 
-  def set_topic(topic)
+  def set_topic(channel_name, topic)
     topic = normalize_topic(topic)
 
     if @dry_run
-      puts "~~~ ##{@channel_name}"
+      puts "~~~ ##{channel_name}"
       puts topic
       return
     end
 
-    channel = find_channel
+    channel = find_channel(channel_name)
     return if channel.topic.value == topic
 
     @client.conversations_setTopic(
@@ -123,11 +122,11 @@ class SlackChannel
     topic.size > 250 ? topic[...240] + "..." : topic
   end
 
-  def find_channel
+  def find_channel(channel_name)
     cursor = nil
     loop do
       pager = @client.conversations_list(cursor:, limit: 200)
-      needle = pager.channels.find { |c| c.name == @channel_name }
+      needle = pager.channels.find { |c| c.name == channel_name }
       return needle if needle
 
       cursor = pager.response_metadata.next_cursor
@@ -137,6 +136,7 @@ end
 
 def lambda_handler(*, dry: false, **)
   jira = JiraRelease.new(JIRA_CLIENT)
-  SlackChannel.new("maintenanceteam", dry_run: dry).set_topic(jira.maintenance_topic)
-  # SlackChannel.new("car-releases", dry_run: dry).set_topic(jira.car_release_topic)
+  slack = SlackChannel.new(dry_run: dry)
+  slack.set_topic("maintenanceteam", jira.maintenance_topic)
+  # slack.set_topic("car-releases", jira.car_release_topic)
 end
