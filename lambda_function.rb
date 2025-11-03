@@ -5,21 +5,22 @@ require "active_support/all"
 require "slack-ruby-client"
 require "jira-ruby"
 
-JIRA_CONFIG = {
+JIRA_CLIENT = JIRA::Client.new(
   username: ENV["JIRA_USER"],
   password: ENV["JIRA_TOKEN"],
   site: "https://versapayclientservices.atlassian.net",
   context_path: "",
   auth_type: :basic,
   read_timeout: 120
-}.freeze
+)
 
 Slack.configure do |config|
   config.token = ENV["SLACK_OAUTH_TOKEN"]
 end
 
 class JiraRelease
-  def initialize
+  def initialize(client)
+    @client = client
     @releases = nil
   end
 
@@ -63,8 +64,7 @@ class JiraRelease
   end
 
   def fetch_releases
-    JIRA::Client
-      .new(JIRA_CONFIG)
+    @client
       .Project
       .find("CAR")
       .versions
@@ -136,7 +136,7 @@ class SlackChannel
 end
 
 def lambda_handler(*, dry: false, **)
-  jira = JiraRelease.new
+  jira = JiraRelease.new(JIRA_CLIENT)
   SlackChannel.new("maintenanceteam", dry_run: dry).set_topic(jira.maintenance_topic)
   # SlackChannel.new("car-releases", dry_run: dry).set_topic(jira.car_release_topic)
 end
