@@ -18,6 +18,75 @@ Slack.configure do |config|
   config.token = ENV["SLACK_OAUTH_TOKEN"]
 end
 
+class JiraRelease
+  def initialize
+    @releases = nil
+  end
+
+  def maintenance_topic
+    prefix = "C-AR Maintenance schedule (hover me)"
+    summary = maintenance_releases.map { |release|
+      deploy_date = Date.parse(release.releaseDate)
+      verify_date = deploy_date - 2
+      freeze_date = deploy_date - 6
+
+      ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_short_name(release)}"
+    }
+    [prefix, summary].flatten.join("\n")
+  end
+
+  def car_release_topic
+    summary = car_releases.map { |release|
+      deploy_date = Date.parse(release.releaseDate)
+      verify_date = deploy_date - 2
+      freeze_date = deploy_date - 6
+
+      # verify_freeze = ":gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} " if release == car_releases.first
+      ":ship:#{date_fmt(deploy_date)} - #{release.name}"
+    }
+    # Using jamie's bitly.com account
+    "<https://bit.ly/vpy-calendar|Next release>: " + [summary].flatten.join("\n")
+  end
+
+  def maintenance_releases
+    releases.select { |v| v.name =~ /Maintenance/ }.take(3)
+  end
+
+  def car_releases
+    releases.select { |v| Date.parse(v.releaseDate) >= Date.today }.take(5)
+  end
+
+  private
+
+  def releases
+    @releases ||= fetch_releases
+  end
+
+  def fetch_releases
+    JIRA::Client
+      .new(JIRA_CONFIG)
+      .Project
+      .find("CAR")
+      .versions
+      .select { |v| !v.released && !v.archived && v.respond_to?(:releaseDate) }
+      .sort_by(&:releaseDate)
+  end
+
+  def date_fmt(date)
+    date.strftime("%b%-d")
+  end
+
+  def release_short_name(release)
+    release
+      .name
+      .gsub(/C-?AR /, "")
+      .gsub("Maintenance", "Maint")
+      .gsub("Release", "Rel")
+      .gsub(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^-]+/, "\\1")
+      .to_s[0...20]
+  end
+end
+
 class SlackChannel
   def initialize(channel_name, client: nil, dry_run: false)
     @channel_name = channel_name
@@ -66,59 +135,8 @@ class SlackChannel
   end
 end
 
-def jira_releases
-  JIRA::Client
-    .new(JIRA_CONFIG)
-    .Project
-    .find("CAR")
-    .versions
-    .select { |v| !v.released && !v.archived && v.respond_to?(:releaseDate) }
-    .sort_by(&:releaseDate)
-end
-
-def maintenance_topic_from(releases)
-  prefix = "C-AR Maintenance schedule (hover me)"
-  summary = releases.map { |release|
-    deploy_date = Date.parse(release.releaseDate)
-    verify_date = deploy_date - 2
-    freeze_date = deploy_date - 6
-
-    ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_short_name(release)}"
-  }
-  [prefix, summary].flatten.join("\n")
-end
-
-def car_release_topic_from(releases)
-  summary = releases.map { |release|
-    deploy_date = Date.parse(release.releaseDate)
-    verify_date = deploy_date - 2
-    freeze_date = deploy_date - 6
-
-    # verify_freeze = ":gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} " if release == releases.first
-    ":ship:#{date_fmt(deploy_date)} - #{release.name}"
-  }
-  # Using jamie's bitly.com account
-  "<https://bit.ly/vpy-calendar|Next release>: " + [summary].flatten.join("\n")
-end
-
-def date_fmt(date)
-  date.strftime("%b%-d")
-end
-
-def release_short_name(release)
-  release
-    .name
-    .gsub(/C-?AR /, "")
-    .gsub("Maintenance", "Maint")
-    .gsub("Release", "Rel")
-    .gsub(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^-]+/, "\\1")
-    .to_s[0...20]
-end
-
 def lambda_handler(*, dry: false, **)
-  maintenance = jira_releases.select { |v| v.name =~ /Maintenance/ }.take(3)
-  SlackChannel.new("maintenanceteam", dry_run: dry).set_topic(maintenance_topic_from(maintenance))
-
-  # car_releases = jira_releases.select { |v| Date.parse(v.releaseDate) >= Date.today }.take(5)
-  # SlackChannel.new("car-releases", dry_run: dry).set_topic(car_release_topic_from(car_releases))
+  jira = JiraRelease.new
+  SlackChannel.new("maintenanceteam", dry_run: dry).set_topic(jira.maintenance_topic)
+  # SlackChannel.new("car-releases", dry_run: dry).set_topic(jira.car_release_topic)
 end
