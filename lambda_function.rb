@@ -18,6 +18,54 @@ Slack.configure do |config|
   config.token = ENV["SLACK_OAUTH_TOKEN"]
 end
 
+class SlackChannel
+  def initialize(channel_name, client: nil, dry_run: false)
+    @channel_name = channel_name
+    @client = client || Slack::Web::Client.new
+    @dry_run = dry_run
+  end
+
+  def set_topic(topic)
+    topic = normalize_topic(topic)
+
+    if @dry_run
+      puts "~~~ ##{@channel_name}"
+      puts topic
+      return
+    end
+
+    channel = find_channel
+    return if channel.topic.value == topic
+
+    @client.conversations_setTopic(
+      channel: channel.id,
+      topic: topic
+    )
+  end
+
+  private
+
+  def normalize_topic(topic)
+    # Note: Slack normalizes the topic name on post:
+    # - converts unicode characters to their :emoji: equivalent
+    # - encodes html entities like &gt; instead of >
+    # - If over 250 chars, truncates to around 240 and adds `...`
+    # So to avoid channel spam, our topic needs to be pre-normalized for an equality check.
+    topic.size > 250 ? topic[...240] + "..." : topic
+  end
+
+  def find_channel
+    cursor = nil
+    loop do
+      pager = @client.conversations_list(cursor:, limit: 200)
+      needle = pager.channels.find { |c| c.name == @channel_name }
+      return needle if needle
+
+      cursor = pager.response_metadata.next_cursor
+    end
+  end
+end
+
 def jira_releases
   JIRA::Client
     .new(JIRA_CONFIG)
@@ -26,38 +74,6 @@ def jira_releases
     .versions
     .select { |v| !v.released && !v.archived && v.respond_to?(:releaseDate) }
     .sort_by(&:releaseDate)
-end
-
-def set_slack_topic(channel, topic, dry: false)
-  # Note: Slack normalizes the topic name on post:
-  # - converts unicode characters to their :emoji: equivalent
-  # - encodes html entities like &gt; instead of >
-  # - If over 250 chars, truncates to around 240 and adds `...`
-  # So to avoid channel spam, our topic needs to be pre-normalized for an equality check.
-  topic = topic[...240] + "..." if topic.size > 250
-
-  if dry
-    puts "~~~ ##{channel}"
-    puts topic
-    return
-  end
-
-  client = Slack::Web::Client.new
-
-  cursor = nil
-  channel = loop do
-    pager = client.conversations_list(cursor:, limit: 200)
-    needle = pager.channels.find { |c| c.name == channel }
-    break needle if needle
-
-    cursor = pager.response_metadata.next_cursor
-  end
-  return if channel.topic.value == topic
-
-  client.conversations_setTopic(
-    channel: channel.id,
-    topic: topic
-  )
 end
 
 def maintenance_topic_from(releases)
@@ -101,8 +117,8 @@ end
 
 def lambda_handler(*, dry: false, **)
   maintenance = jira_releases.select { |v| v.name =~ /Maintenance/ }.take(3)
-  set_slack_topic("maintenanceteam", maintenance_topic_from(maintenance), dry: dry)
+  SlackChannel.new("maintenanceteam", dry_run: dry).set_topic(maintenance_topic_from(maintenance))
 
   # car_releases = jira_releases.select { |v| Date.parse(v.releaseDate) >= Date.today }.take(5)
-  # set_slack_topic("car-releases", car_release_topic_from(car_releases), dry: dry)
+  # SlackChannel.new("car-releases", dry_run: dry).set_topic(car_release_topic_from(car_releases))
 end
