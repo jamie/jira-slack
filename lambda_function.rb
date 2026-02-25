@@ -50,7 +50,7 @@ class JiraRelease
   end
 
   def maintenance_releases
-    releases.select { |v| v.name =~ /Maintenance/ }.take(3)
+    releases.select { |v| v.name =~ /Maintenance/i }.take(3)
   end
 
   def car_releases
@@ -81,6 +81,7 @@ class JiraRelease
       .name
       .gsub(/C-?AR /, "")
       .gsub("Maintenance", "Maint")
+      .gsub("maintenance", "maint")
       .gsub("Release", "Rel")
       .gsub(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[^-]+/, "\\1")
       .to_s[0...20]
