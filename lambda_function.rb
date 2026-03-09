@@ -28,8 +28,8 @@ class JiraRelease
     prefix = "C-AR Maintenance schedule (hover me)"
     summary = maintenance_releases.map { |release|
       deploy_date = Date.parse(release.releaseDate)
-      verify_date = deploy_date - 2
-      freeze_date = deploy_date - 6
+      verify_date = deploy_date - 6
+      freeze_date = deploy_date - 7
 
       ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_short_name(release)}"
     }
