@@ -19,6 +19,8 @@ Slack.configure do |config|
 end
 
 class JiraRelease
+  SQUAD_ROTATION = [1, 5, 2, 4]
+
   def initialize(client)
     @client = client
     @releases = nil
@@ -31,7 +33,7 @@ class JiraRelease
       verify_date = deploy_date - 6
       freeze_date = deploy_date - 7
 
-      ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_short_name(release)}"
+      ":ship:#{date_fmt(deploy_date)} :gh-green:#{date_fmt(verify_date)} :ice_cube:#{date_fmt(freeze_date)} &gt;#{release_short_name(release)} - SQ#{squad(release)}"
     }
     [prefix, summary].flatten.join("\n")
   end
@@ -47,6 +49,11 @@ class JiraRelease
     }
     # Using jamie's bitly.com account
     "<https://bit.ly/vpy-calendar|Next release>: " + [summary].flatten.join("\n")
+  end
+
+  def squad(release)
+    year, period = release.name.match(/(\d{4})\.(\d+)/).captures.map(&:to_i)
+    SQUAD_ROTATION[(year + period) % SQUAD_ROTATION.size]
   end
 
   def maintenance_releases
